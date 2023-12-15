@@ -1,16 +1,26 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+
+import { BrowserRouter } from "react-router-dom";
+import { ModelProvider } from "./provider/ModelProvider/ModelProvider";
+import { SipPhoneProvider } from "./provider/SipPhoneProvider/SipPhoneProvider";
+import { SipClientProvider } from "./provider/SipClientProvider/SipClientProvider";
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById("root") as HTMLElement
 );
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <BrowserRouter>
+    <SipClientProvider>
+      <ModelProvider>
+        <SipPhoneProvider>
+          <App />
+        </SipPhoneProvider>
+      </ModelProvider>
+    </SipClientProvider>
+  </BrowserRouter>
 );
 
 // If you want to start measuring performance in your app, pass a function
