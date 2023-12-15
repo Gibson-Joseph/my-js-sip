@@ -65,6 +65,8 @@ export const SipClientProvider: FC<SipClientContextProviderProps> = ({
       console.log("SIP registrationFailed", e);
     });
 
+    // SIP.debug.enable("JsSIP:*");
+
     // Starting the User Agent
     ua.start();
     setSipClient(ua);

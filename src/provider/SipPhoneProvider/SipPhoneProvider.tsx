@@ -12,6 +12,7 @@ import { RTCSession } from "jssip/lib/RTCSession";
 import { useNavigate } from "react-router-dom";
 import { useSipClient } from "../SipClientProvider/SipClientProvider";
 import { CallOptions, RTCSessionEvent } from "jssip/lib/UA";
+import { getAudioElement } from "../../utils/media-helpers";
 
 interface SipPhoneContextData {
   sipNum: string;
@@ -68,6 +69,21 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
       console.log("outgoingCall has accepted");
       navigate("/answer");
     });
+    session.on("peerconnection", (e) => {
+      const remoteAudio = getAudioElement("remoteAudio");
+      e.peerconnection.ontrack = (event) => {
+        console.log("outgoingCall ontrack fun is called", event.track);
+        if (event.track.kind === "audio") {
+          if (event.streams.length > 0) {
+            remoteAudio.srcObject = event.streams[0];
+          } else {
+            const stream = new MediaStream([event.track]);
+            remoteAudio.srcObject = stream;
+          }
+          remoteAudio.play();
+        }
+      };
+    });
   };
 
   const inCommingCall = (session: RTCSession) => {
@@ -97,6 +113,21 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
     session.on("failed", () => {
       console.log("inCommingCall unable to establish the call");
       setIncommingCall(false);
+    });
+    session.on("peerconnection", (e) => {
+      const remoteAudio = getAudioElement("remoteAudio");
+      e.peerconnection.ontrack = (event) => {
+        console.log("inCommingCall ontrack fun is called", event.track);
+        if (event.track.kind === "audio") {
+          if (event.streams.length > 0) {
+            remoteAudio.srcObject = event.streams[0];
+          } else {
+            const stream = new MediaStream([event.track]);
+            remoteAudio.srcObject = stream;
+          }
+          remoteAudio.play();
+        }
+      };
     });
   };
 
