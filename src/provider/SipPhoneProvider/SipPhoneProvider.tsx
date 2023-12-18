@@ -8,7 +8,11 @@ import React, {
   SetStateAction,
 } from "react";
 import { UseMoel } from "../ModelProvider/ModelProvider";
-import { RTCSession } from "jssip/lib/RTCSession";
+import {
+  PeerConnectionEvent,
+  RTCPeerConnectionDeprecated,
+  RTCSession,
+} from "jssip/lib/RTCSession";
 import { useNavigate } from "react-router-dom";
 import { useSipClient } from "../SipClientProvider/SipClientProvider";
 import { CallOptions, RTCSessionEvent } from "jssip/lib/UA";
@@ -43,7 +47,47 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
 
   const domain = "sipjs.onsip.com";
 
+  const attachRemoteStream = (
+    session: RTCPeerConnectionDeprecated,
+    elementId: string
+  ) => {
+    const mediaElement = getAudioElement(elementId);
+    session.ontrack = (event) => {
+      if (event.track.kind === "audio") {
+        if (event.streams.length > 0 && mediaElement) {
+          mediaElement.srcObject = event.streams[0];
+          mediaElement.play();
+        } else {
+          const stream = new MediaStream([event.track]);
+          if (mediaElement) {
+            mediaElement.srcObject = stream;
+            mediaElement.play();
+          }
+        }
+      }
+    };
+  };
+
+  const attachLocalStream = (session: RTCSession, elementId: string) => {
+    const mediaElement = getAudioElement(elementId);
+    session.connection.ontrack = (event) => {
+      if (event.track.kind === "audio") {
+        if (event.streams.length > 0 && mediaElement) {
+          mediaElement.srcObject = event.streams[0];
+          mediaElement.play();
+        } else {
+          const stream = new MediaStream([event.track]);
+          if (mediaElement) {
+            mediaElement.srcObject = stream;
+            mediaElement.play();
+          }
+        }
+      }
+    };
+  };
+
   const outgoingCall = (session: RTCSession) => {
+    attachLocalStream(session, "localAudio");
     session.on("progress", () => {
       console.log("outgoingCall call is in progress");
       setOutgoingCall(true);
@@ -68,21 +112,6 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
     session.on("accepted", () => {
       console.log("outgoingCall has accepted");
       navigate("/answer");
-    });
-    session.on("peerconnection", (e) => {
-      const remoteAudio = getAudioElement("remoteAudio");
-      e.peerconnection.ontrack = (event) => {
-        console.log("outgoingCall ontrack fun is called", event.track);
-        if (event.track.kind === "audio") {
-          if (event.streams.length > 0) {
-            remoteAudio.srcObject = event.streams[0];
-          } else {
-            const stream = new MediaStream([event.track]);
-            remoteAudio.srcObject = stream;
-          }
-          remoteAudio.play();
-        }
-      };
     });
   };
 
@@ -115,19 +144,7 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
       setIncommingCall(false);
     });
     session.on("peerconnection", (e) => {
-      const remoteAudio = getAudioElement("remoteAudio");
-      e.peerconnection.ontrack = (event) => {
-        console.log("inCommingCall ontrack fun is called", event.track);
-        if (event.track.kind === "audio") {
-          if (event.streams.length > 0) {
-            remoteAudio.srcObject = event.streams[0];
-          } else {
-            const stream = new MediaStream([event.track]);
-            remoteAudio.srcObject = stream;
-          }
-          remoteAudio.play();
-        }
-      };
+      attachRemoteStream(e.peerconnection, "remoteAudio");
     });
   };
 
@@ -156,19 +173,23 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
 
   const muteCall = () => {
     const state = session?.isMuted();
-    if (state) {
-      session?.mute();
-    } else {
+    console.log("state", state.audio);
+
+    if (state.audio) {
       session?.unmute();
+    } else {
+      session?.mute();
     }
   };
 
   const holdCall = () => {
     const state = session?.isOnHold();
-    if (state) {
-      session?.hold();
-    } else {
+    console.log("state", state);
+
+    if (state?.local) {
       session?.unhold();
+    } else {
+      session?.hold();
     }
   };
 
