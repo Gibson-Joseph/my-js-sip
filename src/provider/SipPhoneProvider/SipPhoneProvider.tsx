@@ -187,9 +187,7 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
   }
 
   const outgoingCall = async (session: RTCSession) => {
-    attachLocalStream(session, "videoLocal");
-    // attachRemoteStream(session, "videoRemote");
-    // conference([session], "localAudio");
+    attachLocalStream(session, "videoRemote");
     session.on("progress", () => {
       console.log("outgoingCall call is in progress");
       setOutgoingCall(true);
@@ -215,7 +213,7 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
       console.log("outgoingCall has accepted");
       // attachLocalStream(session, "videoRemote");
       // need to remove this line
-      attachIncommingLocalStream(session, "videoRemote");
+      attachIncommingLocalStream(session, "videoLocal");
       navigate("/answer");
     });
   };
