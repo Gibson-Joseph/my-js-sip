@@ -18,6 +18,16 @@ const Layout = () => {
             <div className="max-w-md w-full relative">
               {outgoingCall && <OutgoingModel />}
               {inCommingCall && <IncommingModel />}
+              <div className="video relative">
+                <video id="videoRemote" width="100%" muted={false} className="bg-slate-900">
+                  <p>Your browser doesn't support HTML5 video.</p>
+                </video>
+                <div className="video-local absolute w-1/3 h-1/3 bottom-0 right-0 bg-black">
+                  <video id="videoLocal" width="100%" muted={false}>
+                    <p>Your browser doesn't support HTML5 video.</p>
+                  </video>
+                </div>
+              </div>
               <Outlet />
             </div>
           </div>
