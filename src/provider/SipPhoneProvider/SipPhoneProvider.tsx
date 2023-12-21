@@ -17,15 +17,22 @@ import { useNavigate } from "react-router-dom";
 import { useSipClient } from "../SipClientProvider/SipClientProvider";
 import { CallOptions, RTCSessionEvent } from "jssip/lib/UA";
 import { getAudioElement, getVideoElement } from "../../utils/media-helpers";
+import useSound from "use-sound";
+
+// sound
+import inRing from "../../assets/sounds/ring.mp3";
+import outRing from "../../assets/sounds/ringback.mp3";
 
 interface SipPhoneContextData {
   sipNum: string;
+  callType: string;
   holdCall: () => void;
   muteCall: () => void;
   setSipNum: React.Dispatch<SetStateAction<string>>;
   callReject: () => void;
   callAnswer: () => void;
-  makeCallRequest: () => void;
+  makeCallRequest: (audio: boolean, video: boolean) => void;
+  session: RTCSession | undefined;
 }
 
 interface SipPhoneContextProviderProps {
@@ -44,6 +51,19 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
 
   const [sipNum, setSipNum] = useState<string>("");
   const [session, setSession] = useState<RTCSession>();
+  const [callType, setCallType] = useState<string>("");
+
+  const [incommingRing, playIcommingRing] = useSound(inRing, {
+    loop: true,
+    forceSoundEnabled: true,
+    soundEnabled: true,
+  });
+
+  const [outgoingRing, playOutgoingRing] = useSound(outRing, {
+    loop: true,
+    forceSoundEnabled: true,
+    soundEnabled: true,
+  });
 
   const domain = "sipjs.onsip.com";
 
@@ -298,15 +318,15 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
     }
   };
 
-  const options: CallOptions = {
-    // eventHandlers,
-    mediaConstraints: {
-      audio: true,
-      video: true,
-    },
-  };
+  const makeCallRequest = async (audio: boolean, video: boolean) => {
+    const options: CallOptions = {
+      // eventHandlers,
+      mediaConstraints: {
+        audio,
+        video,
+      },
+    };
 
-  const makeCallRequest = async () => {
     const target = `sip:${sipNum}@${domain}`;
     console.log("target", target);
 
@@ -318,12 +338,14 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
     <SipPhoneContext.Provider
       value={{
         sipNum,
+        callType,
         muteCall,
         holdCall,
         setSipNum,
         callAnswer,
         callReject,
         makeCallRequest,
+        session,
       }}
     >
       {children}
