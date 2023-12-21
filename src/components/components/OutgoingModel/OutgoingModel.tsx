@@ -1,10 +1,12 @@
 import { useSipPhone } from "../../../provider/SipPhoneProvider/SipPhoneProvider";
 
 // Icon
+import { IoCall } from "react-icons/io5";
+import { FaVideo } from "react-icons/fa";
 import { HiPhoneMissedCall } from "react-icons/hi";
 
 const OutgoingModel = () => {
-  const { callReject } = useSipPhone();
+  const { callReject, callType, sipNum } = useSipPhone();
   return (
     <div
       id="default-modal"
@@ -19,8 +21,15 @@ const OutgoingModel = () => {
               <span className="text-3xl font-medium">G</span>
             </div>
             <div className="w-full flex flex-col justify-center items-center font-[PublicSans] mb-5">
-              <h1>{"Gibson"}</h1>
-              <span className="text-sm">Connecting ...</span>
+              <h1>{sipNum}</h1>
+              <div className="flex gap-x-2 justify-center items-center">
+                {callType === "AUDIO" ? (
+                  <IoCall className="w-5 h-5" />
+                ) : (
+                  <FaVideo className="w-5 h-5" />
+                )}
+                <span className="text-sm">Connecting ...</span>
+              </div>
             </div>
             <div className="flex">
               <button

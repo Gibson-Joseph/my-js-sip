@@ -1,11 +1,14 @@
 import { useSipPhone } from "../../../provider/SipPhoneProvider/SipPhoneProvider";
 
 // Icon
+import { IoCall } from "react-icons/io5";
+import { FaVideo } from "react-icons/fa";
 import { IoCallSharp } from "react-icons/io5";
 import { HiPhoneMissedCall } from "react-icons/hi";
 
 const IncommingModel = () => {
-  const { callReject, callAnswer } = useSipPhone();
+  const { callReject, callAnswer, callType } = useSipPhone();
+  console.log("callType", callType);
 
   return (
     <div
@@ -22,7 +25,14 @@ const IncommingModel = () => {
             </div>
             <div className="w-full flex flex-col justify-center items-center font-[PublicSans] mb-5">
               <h1>{"remoteIdentity"}</h1>
-              <span className="text-sm">Incomming call ...</span>
+              <div className="flex gap-x-2 justify-center items-center">
+                {callType === "AUDIO" ? (
+                  <IoCall className="w-5 h-5" />
+                ) : (
+                  <FaVideo className="w-5 h-5" />
+                )}
+                <span className="text-sm">Incomming call ...</span>
+              </div>
             </div>
           </div>
 

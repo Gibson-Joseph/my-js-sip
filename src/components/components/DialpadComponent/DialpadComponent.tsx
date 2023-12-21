@@ -1,11 +1,57 @@
 import { useSipPhone } from "../../../provider/SipPhoneProvider/SipPhoneProvider";
+import { useSound } from "use-sound";
 
 // Icon
+import { FaVideo } from "react-icons/fa";
 import { FiDelete } from "react-icons/fi";
 import { IoIosCall } from "react-icons/io";
 
+// Sounds
+import DTMF0 from "../../../assets/sounds/DTMF0.mp3";
+import DTMF1 from "../../../assets/sounds/DTMF1.mp3";
+import DTMF2 from "../../../assets/sounds/DTMF2.mp3";
+import DTMF3 from "../../../assets/sounds/DTMF3.mp3";
+import DTMF4 from "../../../assets/sounds/DTMF4.mp3";
+import DTMF5 from "../../../assets/sounds/DTMF5.mp3";
+import DTMF6 from "../../../assets/sounds/DTMF6.mp3";
+import DTMF7 from "../../../assets/sounds/DTMF7.mp3";
+import DTMF8 from "../../../assets/sounds/DTMF8.mp3";
+import DTMF9 from "../../../assets/sounds/DTMF9.mp3";
+import { useState } from "react";
+
 const DialpadComponent = () => {
   const { sipNum, setSipNum, makeCallRequest } = useSipPhone();
+  const [sounds] = useState<any>({
+    DTMF0,
+    DTMF1,
+    DTMF2,
+    DTMF3,
+    DTMF4,
+    DTMF5,
+    DTMF6,
+    DTMF7,
+    DTMF8,
+    DTMF9,
+  });
+
+  const [zero, zeroActio] = useSound(DTMF0, {
+    loop: false,
+    forceSoundEnabled: true,
+    soundEnabled: true,
+  });
+
+  const [one, oneActio] = useSound(DTMF1, {
+    loop: false,
+    forceSoundEnabled: true,
+    soundEnabled: true,
+  });
+
+  const [two, twoActio] = useSound(DTMF2, {
+    loop: false,
+    forceSoundEnabled: true,
+    soundEnabled: true,
+  });
+
   return (
     <div className="p-5 bg-gray-50 w-full">
       <div className="border-t-4 border-t-red-500 shadow-lg bg-white rounded py-3">
@@ -52,15 +98,24 @@ const DialpadComponent = () => {
             }
           )}
         </div>
-        <div className="w-full p-2 mt-3">
+        <div className="w-full p-2 mt-3 flex gap-x-1">
           <button
             type="button"
-            className="bg-[#73d5a0] hover:bg-[#67be90] transition-all duration-300 py-3 px-3 w-full flex justify-center items-center gap-2 text-xl font-[PublicSans]"
+            className="bg-blue-400 hover:bg-blue-500 text-white transition-all duration-300 py-3 px-3 w-full flex justify-center items-center gap-2 text-xl font-[PublicSans]"
             onClick={() => {
-              makeCallRequest();
+              makeCallRequest(true, false);
             }}
           >
             <IoIosCall className="w-7 h-7" /> <span>Call</span>
+          </button>
+          <button
+            type="button"
+            className="bg-red-400 hover:bg-red-500 text-white transition-all duration-300 py-3 px-3 w-full flex justify-center items-center gap-2 text-xl font-[PublicSans]"
+            onClick={() => {
+              makeCallRequest(true, true);
+            }}
+          >
+            <FaVideo className="w-7 h-7" /> <span>Call</span>
           </button>
         </div>
       </div>
