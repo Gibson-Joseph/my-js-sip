@@ -2,7 +2,7 @@ import Button from "../../elements/Button/Button";
 import InputBox from "../../elements/InputBox/InputBox";
 import { useForm } from "react-hook-form";
 import { useSipClient } from "../../../provider/SipClientProvider/SipClientProvider";
-
+import { useNavigate } from "react-router-dom";
 // Icon
 import { FaUser } from "react-icons/fa";
 import { AiOutlineLogin } from "react-icons/ai";
@@ -15,7 +15,7 @@ type TUser = {
 
 const Login = () => {
   const { main } = useSipClient();
-
+  const navigate = useNavigate();
   const defaultValues: TUser = {
     userName: "",
     password: "",
@@ -27,7 +27,14 @@ const Login = () => {
 
   const submitHandler = (data: TUser) => {
     console.log("submit data", data);
-    main(data.userName, data.password);
+    main(data.userName, data.password)
+      .then((res) => {
+        console.log("Login Response", res);
+        navigate("/");
+      })
+      .catch((err) => {
+        console.log("Login Error", err);
+      });
   };
 
   const { errors } = methods.formState;

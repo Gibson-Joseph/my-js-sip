@@ -8,11 +8,7 @@ import React, {
   SetStateAction,
 } from "react";
 import { UseMoel } from "../ModelProvider/ModelProvider";
-import {
-  PeerConnectionEvent,
-  RTCPeerConnectionDeprecated,
-  RTCSession,
-} from "jssip/lib/RTCSession";
+import { RTCSession } from "jssip/lib/RTCSession";
 import { useNavigate } from "react-router-dom";
 import { useSipClient } from "../SipClientProvider/SipClientProvider";
 import { CallOptions, RTCSessionEvent } from "jssip/lib/UA";
@@ -25,12 +21,13 @@ import outRing from "../../assets/sounds/ringback.mp3";
 
 interface SipPhoneContextData {
   sipNum: string;
-  callType: string;
+  callType: CallType;
   holdCall: () => void;
   muteCall: () => void;
   setSipNum: React.Dispatch<SetStateAction<string>>;
   callReject: () => void;
   callAnswer: () => void;
+  addToCall: () => void;
   makeCallRequest: (audio: boolean, video: boolean) => void;
   session: RTCSession | undefined;
 }
@@ -41,17 +38,23 @@ interface SipPhoneContextProviderProps {
 
 const SipPhoneContext = createContext<SipPhoneContextData | null>(null);
 
+export enum CallTypeEnum {
+  VIDEO = "video",
+  AUDIO = "audio",
+}
+
+export type CallType = CallTypeEnum.VIDEO | CallTypeEnum.AUDIO | null;
+
 export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
   children,
 }) => {
   const navigate = useNavigate();
-
   const { sipClient } = useSipClient();
   const { setOutgoingCall, setIncommingCall } = UseMoel();
 
   const [sipNum, setSipNum] = useState<string>("");
   const [session, setSession] = useState<RTCSession>();
-  const [callType, setCallType] = useState<string>("");
+  const [callType, setCallType] = useState<CallType>(null);
 
   const [incommingRing, playIcommingRing] = useSound(inRing, {
     loop: true,
@@ -66,51 +69,7 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
   });
 
   const domain = "sipjs.onsip.com";
-
-  const attachRemoteStream = (
-    session: RTCPeerConnectionDeprecated,
-    elementId: string
-  ) => {
-    const mediaElement = getVideoElement(elementId);
-    session.ontrack = (event) => {
-      if (event.track.kind === "video") {
-        console.log("event.streams RemoteStream", event.streams);
-        if (event.streams.length > 0 && mediaElement) {
-          console.log("RemoteStream If block is called");
-          mediaElement.srcObject = event.streams[0];
-          mediaElement.play();
-        } else {
-          console.log("RemoteStream Else block is called");
-          const stream = new MediaStream([event.track]);
-          if (mediaElement) {
-            mediaElement.srcObject = stream;
-            mediaElement.play();
-          }
-        }
-      }
-    };
-  };
-
-  const attachLocalStream = (session: RTCSession, elementId: string) => {
-    const mediaElement = getVideoElement(elementId);
-    session.connection.ontrack = (event) => {
-      if (event.track.kind === "audio") {
-        console.log("event.streams LocalStream", event.streams);
-        if (event.streams.length > 0 && mediaElement) {
-          console.log("LocalStream If block is called");
-          mediaElement.srcObject = event.streams[0];
-          mediaElement.play();
-        } else {
-          console.log("Else block is called");
-          const stream = new MediaStream([event.track]);
-          if (mediaElement) {
-            mediaElement.srcObject = stream;
-            mediaElement.play();
-          }
-        }
-      }
-    };
-  };
+  const mixedStream = new MediaStream();
 
   const attachIncommingLocalStream = (
     session: RTCSession,
@@ -145,72 +104,27 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
     }
   };
 
-  function conference(
-    sessions: RTCPeerConnectionDeprecated[],
-    remoteAudioId: string
-  ) {
-    //take all received tracks from the sessions you want to merge
-    var receivedTracks: any = [];
-    sessions.forEach(function (session: any) {
-      if (session !== null && session !== undefined) {
-        session.connection.getReceivers().forEach(function (receiver: any) {
-          receivedTracks.push(receiver?.track);
-        });
+  const outgoingCall = (session: RTCSession) => {
+    console.log("outgoingCall session is", session);
+    session.connection.addEventListener("track", (e) => {
+      let mediaElement;
+      if (e.track.kind === "video") {
+        setCallType(CallTypeEnum.VIDEO);
+        mediaElement = getVideoElement("remoteVideo");
+      } else if (e.track.kind === "audio") {
+        mediaElement = getAudioElement("remoteAudio");
+      }
+      mixedStream.addTrack(e.track);
+      if (mediaElement) {
+        mediaElement.srcObject = mixedStream;
+        mediaElement.play();
       }
     });
 
-    //use the Web Audio API to mix the received tracks
-    var context = new AudioContext();
-    var allReceivedMediaStreams = new MediaStream();
-
-    sessions.forEach(function (session: any) {
-      if (session !== null && session !== undefined) {
-        var mixedOutput = context.createMediaStreamDestination();
-
-        session.connection.getReceivers().forEach(function (receiver: any) {
-          receivedTracks.forEach(function (track: any) {
-            allReceivedMediaStreams.addTrack(receiver.track);
-            if (receiver.track.id !== track.id) {
-              var sourceStream = context.createMediaStreamSource(
-                new MediaStream([track])
-              );
-              sourceStream.connect(mixedOutput);
-            }
-          });
-        });
-        //mixing your voice with all the received audio
-        session.connection.getSenders().forEach(function (sender: any) {
-          var sourceStream = context.createMediaStreamSource(
-            new MediaStream([sender.track])
-          );
-          sourceStream.connect(mixedOutput);
-        });
-        session.connection
-          .getSenders()[0]
-          .replaceTrack(mixedOutput.stream.getTracks()[0]);
-      }
-    });
-
-    //play all received stream to you
-    var remoteAudio: any = document.getElementById(remoteAudioId);
-    remoteAudio.srcObject = allReceivedMediaStreams;
-    var promiseRemote = remoteAudio.play();
-    if (promiseRemote !== undefined) {
-      promiseRemote
-        .then((_: any) => {
-          console.log("playing all received streams to you");
-        })
-        .catch((error: any) => {
-          console.log(error);
-        });
-    }
-  }
-
-  const outgoingCall = async (session: RTCSession) => {
-    attachLocalStream(session, "videoRemote");
     session.on("progress", () => {
       console.log("outgoingCall call is in progress");
       setOutgoingCall(true);
+      outgoingRing();
     });
     session.on("connecting", () => {
       console.log("outgoingCall call is in connecting ...");
@@ -219,34 +133,41 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
       console.log("outgoingCall call has ended");
       navigate("/");
       setOutgoingCall(false);
+      setCallType(null);
+      playOutgoingRing.stop();
     });
     session.on("confirmed", () => {
       console.log("outgoingCall is confirmed");
       setOutgoingCall(false);
+      playOutgoingRing.stop();
     });
     session.on("failed", () => {
       console.log("outgoingCall unable to establish the call");
       navigate("/");
       setOutgoingCall(false);
+      setCallType(null);
+      playOutgoingRing.stop();
     });
-    session.on("accepted", (e: any) => {
+    session.on("accepted", () => {
       console.log("outgoingCall has accepted");
-      // attachLocalStream(session, "videoRemote");
-      // need to remove this line
-      attachIncommingLocalStream(session, "videoLocal");
       navigate("/answer");
+      attachIncommingLocalStream(session, "localVideo");
+      playOutgoingRing.stop();
     });
   };
 
   const inCommingCall = (session: RTCSession) => {
+    console.log("Incomming call session is", session);
     session.on("progress", () => {
       console.log("inCommingCall is in progress");
       setIncommingCall(true);
+      incommingRing();
     });
     session.on("accepted", () => {
       console.log("inCommingCall call has answered");
       navigate("/answer");
       setIncommingCall(false);
+      playIcommingRing.stop();
     });
     session.on("connecting", () => {
       console.log("inCommingCall call is in connecting ...");
@@ -255,21 +176,37 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
       console.log(
         "inCommingCall handler will be called for incoming calls too"
       );
-      attachIncommingLocalStream(session, "videoLocal");
       setIncommingCall(false);
+      attachIncommingLocalStream(session, "localVideo");
+      playIcommingRing.stop();
     });
     session.on("ended", () => {
       console.log("inCommingCall call has ended");
       setIncommingCall(false);
       navigate("/");
+      setCallType(null);
+      playIcommingRing.stop();
     });
     session.on("failed", () => {
       console.log("inCommingCall unable to establish the call");
       setIncommingCall(false);
     });
     session.on("peerconnection", (e) => {
-      attachRemoteStream(e.peerconnection, "videoRemote");
-      // conference([e.peerconnection], "remoteAudio");
+      session.connection.addEventListener("track", (e) => {
+        let mediaElement;
+        if (e.track.kind === "video") {
+          setCallType(CallTypeEnum.VIDEO);
+          mediaElement = getVideoElement("remoteVideo");
+        } else if (e.track.kind === "audio") {
+          mediaElement = getAudioElement("remoteAudio");
+        }
+        mixedStream.addTrack(e.track);
+        if (mediaElement) {
+          console.log("mediaElement is working fine");
+          mediaElement.srcObject = mixedStream;
+          mediaElement.play();
+        }
+      });
     });
   };
 
@@ -310,12 +247,16 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
   const holdCall = () => {
     const state = session?.isOnHold();
     console.log("state", state);
-
     if (state?.local) {
       session?.unhold();
     } else {
       session?.hold();
     }
+  };
+
+  const addToCall = () => {
+    console.log("Add to call function is called");
+    makeCallRequest(true, false);
   };
 
   const makeCallRequest = async (audio: boolean, video: boolean) => {
@@ -345,6 +286,7 @@ export const SipPhoneProvider: FC<SipPhoneContextProviderProps> = ({
         callAnswer,
         callReject,
         makeCallRequest,
+        addToCall,
         session,
       }}
     >
