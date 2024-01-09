@@ -11,7 +11,7 @@ import {
 
 interface SipClientContextData {
   sipClient: UA | undefined;
-  main: (userName: string, password: string) => void;
+  main: (userName: string, password: string) => Promise<any>;
 }
 
 interface SipClientContextProviderProps {

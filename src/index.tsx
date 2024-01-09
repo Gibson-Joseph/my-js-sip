@@ -7,6 +7,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ModelProvider } from "./provider/ModelProvider/ModelProvider";
 import { SipPhoneProvider } from "./provider/SipPhoneProvider/SipPhoneProvider";
 import { SipClientProvider } from "./provider/SipClientProvider/SipClientProvider";
+import { SipSessionProvider } from "./provider/SipSessionProvider/SipSessionProvider";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -15,9 +16,11 @@ root.render(
   <BrowserRouter>
     <SipClientProvider>
       <ModelProvider>
-        <SipPhoneProvider>
-          <App />
-        </SipPhoneProvider>
+        <SipSessionProvider>
+          <SipPhoneProvider>
+            <App />
+          </SipPhoneProvider>
+        </SipSessionProvider>
       </ModelProvider>
     </SipClientProvider>
   </BrowserRouter>

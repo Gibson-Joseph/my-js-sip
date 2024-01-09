@@ -1,4 +1,7 @@
-import { useSipPhone } from "../../../provider/SipPhoneProvider/SipPhoneProvider";
+import {
+  CallTypeEnum,
+  useSipPhone,
+} from "../../../provider/SipPhoneProvider/SipPhoneProvider";
 
 // Icon
 import { IoCall } from "react-icons/io5";
@@ -23,7 +26,7 @@ const OutgoingModel = () => {
             <div className="w-full flex flex-col justify-center items-center font-[PublicSans] mb-5">
               <h1>{sipNum}</h1>
               <div className="flex gap-x-2 justify-center items-center">
-                {callType === "AUDIO" ? (
+                {callType === CallTypeEnum.AUDIO ? (
                   <IoCall className="w-5 h-5" />
                 ) : (
                   <FaVideo className="w-5 h-5" />
